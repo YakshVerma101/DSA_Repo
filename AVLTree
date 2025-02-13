@@ -1,0 +1,214 @@
+import java.util.*;
+
+// ---------------- AVL Tree ---------------- //
+class AVLTree {
+    class Node {
+        int key, height;
+        Node left, right;
+
+        Node(int d) {
+            key = d;
+            height = 1;
+        }
+    }
+
+    private Node root;
+
+    private int height(Node N) {
+        return (N == null) ? 0 : N.height;
+    }
+
+    private Node rotateRight(Node y) {
+        Node x = y.left;
+        Node T2 = x.right;
+        x.right = y;
+        y.left = T2;
+        y.height = Math.max(height(y.left), height(y.right)) + 1;
+        x.height = Math.max(height(x.left), height(x.right)) + 1;
+        return x;
+    }
+
+    private Node rotateLeft(Node x) {
+        Node y = x.right;
+        Node T2 = y.left;
+        y.left = x;
+        x.right = T2;
+        x.height = Math.max(height(x.left), height(x.right)) + 1;
+        y.height = Math.max(height(y.left), height(y.right)) + 1;
+        return y;
+    }
+
+    private int getBalance(Node N) {
+        return (N == null) ? 0 : height(N.left) - height(N.right);
+    }
+
+    public void insert(int key) {
+        root = insertRec(root, key);
+    }
+
+    private Node insertRec(Node node, int key) {
+        if (node == null) return new Node(key);
+
+        if (key < node.key) node.left = insertRec(node.left, key);
+        else if (key > node.key) node.right = insertRec(node.right, key);
+        else return node;
+
+        node.height = Math.max(height(node.left), height(node.right)) + 1;
+        int balance = getBalance(node);
+
+        if (balance > 1 && key < node.left.key) return rotateRight(node);
+        if (balance < -1 && key > node.right.key) return rotateLeft(node);
+        if (balance > 1 && key > node.left.key) {
+            node.left = rotateLeft(node.left);
+            return rotateRight(node);
+        }
+        if (balance < -1 && key < node.right.key) {
+            node.right = rotateRight(node.right);
+            return rotateLeft(node);
+        }
+
+        return node;
+    }
+
+    public void inorder() {
+        inorderRec(root);
+        System.out.println();
+    }
+
+    private void inorderRec(Node root) {
+        if (root != null) {
+            inorderRec(root.left);
+            System.out.print(root.key + " ");
+            inorderRec(root.right);
+        }
+    }
+}
+
+// ---------------- Kruskal’s Algorithm (MST) ---------------- //
+class KruskalMST {
+    class Edge implements Comparable<Edge> {
+        int src, dest, weight;
+        public int compareTo(Edge compareEdge) {
+            return this.weight - compareEdge.weight;
+        }
+    }
+
+    class Subset {
+        int parent, rank;
+    }
+
+    private int V, E;
+    private Edge[] edges;
+
+    public KruskalMST(int v, int e) {
+        this.V = v;
+        this.E = e;
+        edges = new Edge[E];
+        for (int i = 0; i < e; i++) edges[i] = new Edge();
+    }
+
+    private int find(Subset subsets[], int i) {
+        if (subsets[i].parent != i) subsets[i].parent = find(subsets, subsets[i].parent);
+        return subsets[i].parent;
+    }
+
+    private void union(Subset subsets[], int x, int y) {
+        int rootX = find(subsets, x);
+        int rootY = find(subsets, y);
+        if (subsets[rootX].rank < subsets[rootY].rank) subsets[rootX].parent = rootY;
+        else if (subsets[rootX].rank > subsets[rootY].rank) subsets[rootY].parent = rootX;
+        else {
+            subsets[rootY].parent = rootX;
+            subsets[rootX].rank++;
+        }
+    }
+
+    public void kruskalMST() {
+        Edge result[] = new Edge[V];
+        int e = 0, i = 0;
+        Arrays.sort(edges);
+        Subset subsets[] = new Subset[V];
+
+        for (int v = 0; v < V; ++v) {
+            subsets[v] = new Subset();
+            subsets[v].parent = v;
+            subsets[v].rank = 0;
+        }
+
+        while (e < V - 1 && i < E) {
+            Edge nextEdge = edges[i++];
+            int x = find(subsets, nextEdge.src);
+            int y = find(subsets, nextEdge.dest);
+            if (x != y) {
+                result[e++] = nextEdge;
+                union(subsets, x, y);
+            }
+        }
+
+        System.out.println("Edges in MST:");
+        for (i = 0; i < e; ++i)
+            System.out.println(result[i].src + " - " + result[i].dest + " : " + result[i].weight);
+    }
+}
+
+// ---------------- KMP Algorithm (Pattern Matching) ---------------- //
+class KMP {
+    public void KMPSearch(String pattern, String text) {
+        int m = pattern.length(), n = text.length();
+        int lps[] = new int[m];
+        computeLPS(pattern, m, lps);
+
+        int i = 0, j = 0;
+        while (i < n) {
+            if (pattern.charAt(j) == text.charAt(i)) {
+                j++;
+                i++;
+            }
+            if (j == m) {
+                System.out.println("Pattern found at index " + (i - j));
+                j = lps[j - 1];
+            } else if (i < n && pattern.charAt(j) != text.charAt(i)) {
+                if (j != 0) j = lps[j - 1];
+                else i++;
+            }
+        }
+    }
+
+    private void computeLPS(String pattern, int m, int[] lps) {
+        int len = 0, i = 1;
+        while (i < m) {
+            if (pattern.charAt(i) == pattern.charAt(len)) {
+                len++;
+                lps[i] = len;
+                i++;
+            } else {
+                if (len != 0) len = lps[len - 1];
+                else lps[i++] = 0;
+            }
+        }
+    }
+}
+
+// ---------------- Driver Code ---------------- //
+public class DSAExtended {
+    public static void main(String[] args) {
+        // AVL Tree
+        AVLTree avl = new AVLTree();
+        avl.insert(10);
+        avl.insert(20);
+        avl.insert(30);
+        avl.insert(40);
+        avl.insert(50);
+        avl.insert(25);
+        System.out.print("AVL Tree Inorder: ");
+        avl.inorder();
+
+        // KMP Algorithm
+        KMP kmp = new KMP();
+        kmp.KMPSearch("ABABCABAB", "ABABDABACDABABCABAB");
+
+        // Kruskal's MST
+        KruskalMST mst = new KruskalMST(4, 5);
+        mst.kruskalMST();
+    }
+}
